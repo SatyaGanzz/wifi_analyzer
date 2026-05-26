@@ -451,13 +451,13 @@ def check_bottom_navigation():
     print(Fore.WHITE + Style.BRIGHT + "\n    Press Enter to return to the menu or type 'e' to exit... ", end="")
     user_input = input().strip().lower()
     if user_input == 'e':
-        print(Fore.GREEN + "\n    [+] Thank you for using Satyaghani tools. Goodbye!")
+        print(Fore.GREEN + "\n    [+] Thank you for using SatyaGanzz tools. Goodbye!")
         sys.exit()
 
 def start_boot_loading():
     """Simulates a cyberpunk loading sequence with exact 3.5s duration and colored bars"""
     print(Fore.GREEN + Style.BRIGHT + " LOADING TOOLS.....")
-    print(Fore.CYAN + Style.BRIGHT + "tools by satyaghani".center(65, " "))
+    print(Fore.CYAN + Style.BRIGHT + "Tools By SatyaGanzz".center(65, " "))
     print()
     time.sleep(0.3)
     
@@ -508,7 +508,7 @@ if __name__ == "__main__":
 
         # Banner Utama
         print(Fore.RED + Style.BRIGHT + art)
-        print(Fore.CYAN + Style.BRIGHT + "tools by satyaghani".center(65, " "))
+        print(Fore.CYAN + Style.BRIGHT + "Tools By SatyaGanzz".center(65, " "))
         
         # Tampilan Menu Berjumlah 6 Opsi
         padding = "    "
@@ -540,7 +540,7 @@ if __name__ == "__main__":
             run_jitter_test()
             check_bottom_navigation()
         elif menu_choice == '6':
-            print(Fore.GREEN + "\n    [+] Thank you for using Satyaghani tools. Goodbye!")
+            print(Fore.GREEN + "\n    [+] Thank you for using SatyaGanzz tools. Goodbye!")
             break
         else:
             print(Fore.RED + "    [-] Invalid choice, please enter 1, 2, 3, 4, 5, or 6.")
