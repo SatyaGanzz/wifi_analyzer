@@ -23,7 +23,7 @@ init(autoreset=True)
 
 def get_wifi_details_windows():
     """Extracts deep Wi-Fi details including signal strength and encryption on Windows"""
-    wifi_info = {"signal": "Not detected", "dbm": "N/A", "auth": "Not detected", "ssid": "Not detected"}
+    wifi_info = {"signal": "Not detected", "dbm": "N/A", "auth": "Not detected", "ssid": "Not detected", "password": "N/A"}
     try:
         meta_data = subprocess.check_output(["netsh", "wlan", "show", "interfaces"]).decode('utf-8', errors='ignore')
         
@@ -41,6 +41,20 @@ def get_wifi_details_windows():
             wifi_info["signal"] = f"{percentage}%"
             dbm = int((percentage / 2) - 100)
             wifi_info["dbm"] = f"{dbm} dBm"
+            
+        if wifi_info["ssid"] != "Not detected":
+            try:
+                profile_data = subprocess.check_output(
+                    ['netsh', 'wlan', 'show', 'profile', wifi_info["ssid"], 'key=clear']
+                ).decode('utf-8', errors='ignore')
+                password_match = re.search(r"Key Content\s*:\s*(.*)", profile_data)
+                if password_match:
+                    wifi_info["password"] = password_match.group(1).strip()
+                else:
+                    wifi_info["password"] = "(Open Network / No Password)"
+            except Exception:
+                wifi_info["password"] = "(Could not extract)"
+                
     except Exception:
         pass
     return wifi_info
@@ -201,67 +215,66 @@ def run_speedtest():
             t.join()
         return {"error": f"Speedtest failed to execute: {e}"}
 
-def loading_bar(duration=2):
-    """Creates a simple dynamic loading bar animation"""
-    slots = 20
-    for i in range(slots + 1):
-        percent = (i / slots) * 100
-        bar = '#' * i + '-' * (slots - i)
-        sys.stdout.write(Fore.GREEN + f"\r[{bar}] {percent:.0f}%")
-        sys.stdout.flush()
-        time.sleep(duration / slots)
-
 # --- FITUR UTILITY JARINGAN ---
 
 def run_wifi_analysis():
-    """Runs the core network analysis, geolocation check, port scan, and speedtest"""
+    """Runs the core network analysis, geolocation check, port scan, speedtest, and extracts password"""
     start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    report_data = []
     
     print("\n" + Fore.WHITE + "=" * 50)
     print(Fore.MAGENTA + Style.BRIGHT + "         WIFI & NETWORK ANALYSIS TOOL          ")
     print(Fore.CYAN + Style.BRIGHT + f"         Started at: {start_time}")
     print(Fore.WHITE + "=" * 50)
     
-    # 1. Wi-Fi SSID & Signal Strength Analysis
+    w = 17
+    wifi_details = {"ssid": "Not detected", "auth": "N/A", "signal": "N/A", "dbm": "N/A", "password": "N/A"}
+    
+    # 1. Wi-Fi SSID, Signal Strength & PASSWORD Extractor Analysis
     print(Fore.YELLOW + "[+] Analyzing Wi-Fi Connection Details...")
     if platform.system() == "Windows":
         wifi_details = get_wifi_details_windows()
         sig_num = int(wifi_details["signal"].replace("%","")) if wifi_details["signal"] != "Not detected" else 0
         sig_color = Fore.GREEN if sig_num >= 75 else (Fore.YELLOW if sig_num >= 50 else Fore.RED)
         
-        print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" Wi-Fi SSID     : {wifi_details['ssid']}")
-        print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" Security Type  : {wifi_details['auth']}")
-        print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" Signal Quality : " + sig_color + f"{wifi_details['signal']} ({wifi_details['dbm']})")
-        report_data.append(f"Wi-Fi SSID: {wifi_details['ssid']} | Security: {wifi_details['auth']} | Signal: {wifi_details['signal']}")
+        print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" {'Wi-Fi SSID':<{w}}: {wifi_details['ssid']}")
+        print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" {'Security Type':<{w}}: {wifi_details['auth']}")
+        print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" {'Signal Quality':<{w}}: " + sig_color + f"{wifi_details['signal']} ({wifi_details['dbm']})")
+        print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" {'Wi-Fi Password':<{w}}: " + Fore.LIGHTCYAN_EX + Style.BRIGHT + f"{wifi_details['password']}")
     else:
-        ssid = get_wifi_ssid()
-        print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" Wi-Fi SSID     : {ssid}")
-        report_data.append(f"Wi-Fi SSID: {ssid}")
+        wifi_details["ssid"] = get_wifi_ssid()
+        print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" {'Wi-Fi SSID':<{w}}: {wifi_details['ssid']}")
     
     # 2. Local IP Details Check
     net_info = get_network_details()
     local_ip = net_info.get('ip', 'Not detected')
-    print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" Local IP Addr  : {local_ip}")
-    print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" Subnet Mask    : {net_info.get('subnet', 'Not detected')}")
-    print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" Default Gateway: {net_info.get('gateway', 'Not detected')}")
-    print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" MAC Address    : {net_info.get('mac', 'Not detected')}")
-    report_data.append(f"Local IP: {local_ip} | Gateway: {net_info.get('gateway')} | MAC: {net_info.get('mac')}")
+    gateway_ip = net_info.get('gateway', 'Not detected')
+    
+    print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" {'Local IP Addr':<{w}}: " + Fore.CYAN + Style.BRIGHT + f"{local_ip}")
+    print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" {'Subnet Mask':<{w}}: {net_info.get('subnet', 'Not detected')}")
+    
+    if gateway_ip != "Not found" and gateway_ip != "Not detected":
+        ip_part = Fore.CYAN + Style.BRIGHT + f"{gateway_ip}"
+        link_part = Fore.LIGHTBLUE_EX + "\033[4m" + f"http://{gateway_ip}" + "\033[24m"
+        print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" {'Default Gateway':<{w}}: {ip_part} " + Fore.WHITE + "/" + f" {link_part}")
+    else:
+        print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" {'Default Gateway':<{w}}: " + Fore.RED + f"{gateway_ip}")
+        
+    print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" {'MAC Address':<{w}}: {net_info.get('mac', 'Not detected')}")
     
     # 3. IP Geo-location Check
     print(Fore.YELLOW + "\n[+] Fetching IP Geolocation Details...")
     geo_info = get_geo_location()
     if "error" not in geo_info:
-        print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" Public IP      : {geo_info['public_ip']}")
-        print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" ISP Provider   : {geo_info['isp']}")
-        print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" Region Location: {geo_info['city']}, {geo_info['region']}, {geo_info['country']}")
-        report_data.append(f"Public IP: {geo_info['public_ip']} | ISP: {geo_info['isp']} | Location: {geo_info['city']}, {geo_info['country']}")
+        print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" {'Public IP':<{w}}: " + Fore.CYAN + Style.BRIGHT + f"{geo_info['public_ip']}")
+        print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" {'ISP Provider':<{w}}: {geo_info['isp']}")
+        print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" {'Region Location':<{w}}: {geo_info['city']}, {geo_info['region']}, {geo_info['country']}")
     else:
         print(Fore.RED + f"[-] {geo_info['error']}")
+        geo_info = {"public_ip": "N/A", "isp": "N/A", "city": "N/A", "region": "N/A", "country": "N/A"}
         
     # 4. Port Scanning Feature
-    if net_info.get('gateway') and net_info.get('gateway') != "Not found":
-        run_port_scanner(net_info['gateway'])
+    if gateway_ip and gateway_ip != "Not found" and gateway_ip != "Not detected":
+        run_port_scanner(gateway_ip)
     else:
         print(Fore.RED + "\n[-] Gateway not found. Skipping Port Scan.")
         
@@ -269,25 +282,45 @@ def run_wifi_analysis():
     speed_info = run_speedtest()
     print(Fore.YELLOW + "\n[=] SPEEDTEST RESULTS [=]")
     if "error" not in speed_info:
-        print(Fore.GREEN + "[*]" + Fore.BLUE + Style.BRIGHT + f" Download       : {speed_info['download']}")
-        print(Fore.GREEN + "[*]" + Fore.MAGENTA + Style.BRIGHT + f" Upload         : {speed_info['upload']}")
-        print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" Ping Latency   : {speed_info['ping']}")
-        report_data.append(f"Speedtest Results -> Download: {speed_info['download']} | Upload: {speed_info['upload']} | Ping: {speed_info['ping']}")
+        print(Fore.GREEN + "[*]" + Fore.BLUE + Style.BRIGHT + f" {'Download':<{w}}: {speed_info['download']}")
+        print(Fore.GREEN + "[*]" + Fore.MAGENTA + Style.BRIGHT + f" {'Upload':<{w}}: {speed_info['upload']}")
+        print(Fore.GREEN + "[*]" + Fore.WHITE + Style.BRIGHT + f" {'Ping Latency':<{w}}: {speed_info['ping']}")
     else:
         print(Fore.RED + f"[-] {speed_info['error']}")
+        speed_info = {"download": "N/A", "upload": "N/A", "ping": "N/A"}
 
     print(Fore.WHITE + "=" * 50)
     print(Fore.CYAN + Style.BRIGHT + f"       Main Analysis Finished at: {datetime.now().strftime('%H:%M:%S')}       ")
     print(Fore.WHITE + "=" * 50)
     
+    # SYSTEM LOG REPORT GENERATOR (TERSTRUKTUR RAPI KE BAWAH)
     try:
         with open("network_report.txt", "a") as f:
-            f.write(f"\n--- REPORT [{start_time}] ---\n")
-            for line in report_data:
-                f.write(line + "\n")
-        print(Fore.GREEN + " [Report] Results automatically appended to 'network_report.txt'")
-    except Exception:
-        pass
+            f.write(f"==================================================\n")
+            f.write(f" NETWORK ANALYSIS REPORT | {start_time}\n")
+            f.write(f"==================================================\n")
+            f.write(f" [WI-FI DETAILS]\n")
+            f.write(f"  SSID             : {wifi_details.get('ssid', 'N/A')}\n")
+            f.write(f"  Security         : {wifi_details.get('auth', 'N/A')}\n")
+            f.write(f"  Signal Strength  : {wifi_details.get('signal', 'N/A')} ({wifi_details.get('dbm', 'N/A')})\n")
+            f.write(f"  Password         : {wifi_details.get('password', 'N/A')}\n\n")
+            f.write(f" [LOCAL NETWORK]\n")
+            f.write(f"  Local IP Address : {local_ip}\n")
+            f.write(f"  Subnet Mask      : {net_info.get('subnet', 'N/A')}\n")
+            f.write(f"  Default Gateway  : {gateway_ip}\n")
+            f.write(f"  MAC Address      : {net_info.get('mac', 'N/A')}\n\n")
+            f.write(f" [PUBLIC INTEL]\n")
+            f.write(f"  Public IP        : {geo_info.get('public_ip', 'N/A')}\n")
+            f.write(f"  ISP Provider     : {geo_info.get('isp', 'N/A')}\n")
+            f.write(f"  Location         : {geo_info.get('city', 'N/A')}, {geo_info.get('region', 'N/A')}, {geo_info.get('country', 'N/A')}\n\n")
+            f.write(f" [SPEEDTEST RESULTS]\n")
+            f.write(f"  Download Speed   : {speed_info.get('download', 'N/A')}\n")
+            f.write(f"  Upload Speed     : {speed_info.get('upload', 'N/A')}\n")
+            f.write(f"  Ping Latency     : {speed_info.get('ping', 'N/A')}\n")
+            f.write(f"==================================================\n\n\n")
+        print(Fore.GREEN + " [Report] Results successfully structured inside 'network_report.txt'")
+    except Exception as e:
+        print(Fore.RED + f" [Report] Error writing to log file: {e}")
 
 def run_whois_lookup():
     """Performs an advanced WHOIS intelligence lookup via free JSON API"""
@@ -301,7 +334,7 @@ def run_whois_lookup():
         response = requests.get(f"https://ipapi.co/{target}/json/", timeout=5).json()
         
         if "error" not in response:
-            print(Fore.GREEN + " [+] IP Target    : " + Fore.WHITE + Style.BRIGHT + response.get("ip", target))
+            print(Fore.GREEN + " [+] IP Target    : " + Fore.CYAN + Style.BRIGHT + response.get("ip", target))
             print(Fore.GREEN + " [+] Organization : " + Fore.CYAN + Style.BRIGHT + response.get("org", "N/A"))
             print(Fore.GREEN + " [+] ASN Code     : " + Fore.WHITE + Style.BRIGHT + response.get("asn", "N/A"))
             print(Fore.GREEN + " [+] Country/City : " + Fore.WHITE + Style.BRIGHT + f"{response.get('city')}, {response.get('country_name')}")
@@ -418,26 +451,43 @@ def check_bottom_navigation():
     print(Fore.WHITE + Style.BRIGHT + "\n    Press Enter to return to the menu or type 'e' to exit... ", end="")
     user_input = input().strip().lower()
     if user_input == 'e':
-        print(Fore.GREEN + "\n    [+] Thank you for using SatyaGanzz tools. Goodbye!")
+        print(Fore.GREEN + "\n    [+] Thank you for using Satyaghani tools. Goodbye!")
         sys.exit()
 
 def start_boot_loading():
-    """Simulates a sleek terminal component boot loading sequence"""
-    print(Fore.YELLOW + Style.BRIGHT + "loading tools", end="")
-    for _ in range(5):
-        time.sleep(0.3)
-        print(Fore.YELLOW + Style.BRIGHT + ".", end="")
-        sys.stdout.flush()
-    print("\n" + Fore.CYAN + Style.BRIGHT + "tools by SatyaGanzz")
-    time.sleep(0.6)
+    """Simulates a cyberpunk loading sequence with exact 3.5s duration and colored bars"""
+    print(Fore.GREEN + Style.BRIGHT + " LOADING TOOLS.....")
+    print(Fore.CYAN + Style.BRIGHT + "tools by satyaghani".center(65, " "))
+    print()
+    time.sleep(0.3)
     
-    components = ["Network Interfaces", "Socket Modules", "Speedtest Engine", "Colorama Graphics", "WHOIS Analytics Engine"]
+    components = [
+        "Network Interfaces", 
+        "Socket Modules", 
+        "Speedtest Engine", 
+        "Colorama Graphics", 
+        "WHOIS Analytics Engine"
+    ]
+    
     for comp in components:
-        print(Fore.WHITE + f" [*] Loading {comp:<24} ... " + Fore.GREEN + "OK")
-        time.sleep(0.15)
+        sys.stdout.write(Fore.GREEN + "  [*] " + Fore.WHITE + Style.BRIGHT + f"Loading {comp:<24} ")
+        sys.stdout.flush()
         
-    print(Fore.GREEN + Style.BRIGHT + "\n[+] Succes Load all Component")
-    time.sleep(1.2)
+        slots = 10
+        for i in range(slots + 1):
+            bar = Fore.CYAN + '■' * i + Fore.LIGHTBLACK_EX + ' ' * (slots - i)
+            percent = Fore.YELLOW + f"{int((i / slots) * 100)}%"
+            
+            sys.stdout.write(f"\r  [*] Loading {comp:<24} [{bar}] {percent}")
+            sys.stdout.flush()
+            time.sleep(0.052) # Tepat 52 ms per slot biar total durasi sinkron 3.5 detik
+            
+        print(Fore.WHITE + " ... " + Fore.GREEN + Style.BRIGHT + "OK")
+        time.sleep(0.05)
+        
+    print(Fore.GREEN + Style.BRIGHT + "\n " + "■"*17 + " ALL TOOLS LOADED SUCCESSFULLY! " + "■"*17)
+    print(Fore.CYAN + Style.BRIGHT + " READY TO RUN ".center(65, " "))
+    time.sleep(0.6)
 
 # --- MAIN PROGRAM ---
 if __name__ == "__main__":
@@ -458,12 +508,12 @@ if __name__ == "__main__":
 
         # Banner Utama
         print(Fore.RED + Style.BRIGHT + art)
-        print(Fore.CYAN + Style.BRIGHT + "Tools by SatyaGanzz".center(65, " "))
+        print(Fore.CYAN + Style.BRIGHT + "tools by satyaghani".center(65, " "))
         
-        # Tampilan Menu Berjumlah 6 Opsi dengan Jajaran Vertikal Sempurna
+        # Tampilan Menu Berjumlah 6 Opsi
         padding = "    "
         print(Fore.YELLOW + Style.BRIGHT + "========================== TOOLS MENU ==========================")
-        print(padding + Fore.WHITE + Style.BRIGHT + "[1] Wifi Analysis (SSID, IP, Geo, Ports, Speedtest)")
+        print(padding + Fore.WHITE + Style.BRIGHT + "[1] Wifi Analysis (SSID, IP, Geo, Ports, Speedtest, Pass)")
         print(padding + Fore.WHITE + Style.BRIGHT + "[2] Advanced IP/Domain Intel WHOIS Lookup")
         print(padding + Fore.WHITE + Style.BRIGHT + "[3] DNS Domain Resolver (Domain -> IP)")
         print(padding + Fore.WHITE + Style.BRIGHT + "[4] Discover Active Devices on Wi-Fi (Subnet Scanner)")
@@ -490,7 +540,7 @@ if __name__ == "__main__":
             run_jitter_test()
             check_bottom_navigation()
         elif menu_choice == '6':
-            print(Fore.GREEN + "\n    [+] Thank you for using SatyaGanzz tools. Goodbye!")
+            print(Fore.GREEN + "\n    [+] Thank you for using Satyaghani tools. Goodbye!")
             break
         else:
             print(Fore.RED + "    [-] Invalid choice, please enter 1, 2, 3, 4, 5, or 6.")
