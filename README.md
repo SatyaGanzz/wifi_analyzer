@@ -11,7 +11,7 @@
 
 ---
 
-<img src="/img/banner.png">
+<align="center" img src="/img/banner.png">
 
 ---
 ## 📖 Description
@@ -75,9 +75,9 @@ sudo python3 wifi_analyzer.py
 </p>
 
 <p align="center">
-  <img src="/img/demo2.png" alt="Example output" width="800"/><br>
+  <img src="/img/demo3.png" alt="Example output" width="800"/><br>
   <code><br>Choose 1<pentest_output></code>
 </p>
 
 ---
-&copy SatyaGanzz
+&copy; SatyaGanzz
