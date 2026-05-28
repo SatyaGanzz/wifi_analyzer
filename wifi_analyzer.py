@@ -293,7 +293,6 @@ def run_wifi_analysis():
     print(Fore.CYAN + Style.BRIGHT + f"       Main Analysis Finished at: {datetime.now().strftime('%H:%M:%S')}       ")
     print(Fore.WHITE + "=" * 50)
     
-    # SYSTEM LOG REPORT GENERATOR (TERSTRUKTUR RAPI KE BAWAH)
     try:
         with open("network_report.txt", "a") as f:
             f.write(f"==================================================\n")
@@ -446,6 +445,80 @@ def run_jitter_test():
     else:
         print(Fore.RED + " [-] Stablity test failed due to complete packet loss.")
 
+# --- FITUR UTILITY BARU: REAL-TIME BANDWIDTH MONITOR (MENU 6) ---
+
+def format_speed(bytes_per_sec):
+    """Formats raw bytes value into human-readable network speeds"""
+    if bytes_per_sec < 1000:
+        return f"{bytes_per_sec:.2f} B/s", f"{(bytes_per_sec * 8 / 1_000_000):.2f} Mbps"
+    elif bytes_per_sec < 1_000_000:
+        return f"{(bytes_per_sec / 1000):.2f} KB/s", f"{(bytes_per_sec * 8 / 1_000_000):.2f} Mbps"
+    else:
+        return f"{(bytes_per_sec / 1_000_000):.2f} MB/s", f"{(bytes_per_sec * 8 / 1_000_000):.2f} Mbps"
+
+def format_size(bytes_total):
+    """Formats total raw bytes counters into MegaBytes/GigaBytes scale"""
+    return f"{(bytes_total / 1_000_000):.2f} MB"
+
+def run_bandwidth_monitor():
+    """Tracks and outputs high-frequency live data-flow statistics per second"""
+    print(Fore.YELLOW + "\n[+] Initializing live bandwidth listener... Press Ctrl+C to stop.")
+    time.sleep(1)
+    
+    # Snapshot pencatatan bita awal perangkat keras jaringan
+    old_io = psutil.net_io_counters()
+    old_recv = old_io.bytes_recv
+    old_sent = old_io.bytes_sent
+    
+    total_downloaded = 0
+    total_uploaded = 0
+    
+    try:
+        while True:
+            time.sleep(1)
+            new_io = psutil.net_io_counters()
+            
+            # Ambil selisih lalu kalkulasi kecepatan per detiknya
+            bytes_recv_diff = new_io.bytes_recv - old_recv
+            bytes_sent_diff = new_io.bytes_sent - old_sent
+            
+            # Akumulasikan total data terpakai selama monitoring aktif
+            total_downloaded += bytes_recv_diff
+            total_uploaded += bytes_sent_diff
+            
+            # Sinkronisasi snap data penampung terakhir
+            old_recv = new_io.bytes_recv
+            old_sent = new_io.bytes_sent
+            
+            dl_human, dl_mbps = format_speed(bytes_recv_diff)
+            ul_human, ul_mbps = format_speed(bytes_sent_diff)
+            
+            os.system('cls' if os.name == 'nt' else 'clear')
+            
+            # Cetak Logo Default Kembali Bawaan Figlet
+            if figlet_format:
+                try:
+                    print(Fore.RED + Style.BRIGHT + figlet_format("Wifi Analysis", font="slant"))
+                except Exception:
+                    print(Fore.RED + Style.BRIGHT + figlet_format("Wifi Analysis"))
+            else:
+                print(Fore.RED + Style.BRIGHT + "=== Wifi Analyzer ===")
+                
+            print(Fore.CYAN + Style.BRIGHT + "Tools by SatyaGanzz".center(65, " "))
+            print(Fore.YELLOW + Style.BRIGHT + "================================================================")
+            print(Fore.GREEN + Style.BRIGHT + " 📡 BANDWIDTH REAL-TIME MONITOR :")
+            print(Fore.YELLOW + " ----------------------------------------------------------------")
+            print(Fore.WHITE + Style.BRIGHT + f"  ↓ Download      :  {dl_human:<12} ( {dl_mbps} )")
+            print(Fore.WHITE + Style.BRIGHT + f"  ↑ Upload        :  {ul_human:<12} ( {ul_mbps} )")
+            print(Fore.BLUE + Style.BRIGHT + f"  📊 Total Download:  {format_size(total_downloaded)}")
+            print(Fore.MAGENTA + Style.BRIGHT + f"  📊 Total Upload  :  {format_size(total_uploaded)}")
+            print(Fore.YELLOW + Style.BRIGHT + "================================================================")
+            print(Fore.LIGHTBLACK_EX + "  [!] Streaming metrics live... Press Ctrl+C to stop tracking.")
+            
+    except KeyboardInterrupt:
+        print(Fore.GREEN + "\n  [+] Pausing active listener... Safely returning to menu.")
+        time.sleep(1.2)
+
 def check_bottom_navigation():
     """Handles prompt navigation after a utility function finishes execution"""
     print(Fore.WHITE + Style.BRIGHT + "\n    Press Enter to return to the menu or type 'e' to exit... ", end="")
@@ -457,7 +530,7 @@ def check_bottom_navigation():
 def start_boot_loading():
     """Simulates a cyberpunk loading sequence with exact 3.5s duration and colored bars"""
     print(Fore.GREEN + Style.BRIGHT + " LOADING TOOLS.....")
-    print(Fore.CYAN + Style.BRIGHT + "Tools By SatyaGanzz".center(65, " "))
+    print(Fore.CYAN + Style.BRIGHT + "Tools by SatyaGanzz".center(65, " "))
     print()
     time.sleep(0.3)
     
@@ -477,10 +550,9 @@ def start_boot_loading():
         for i in range(slots + 1):
             bar = Fore.CYAN + '■' * i + Fore.LIGHTBLACK_EX + ' ' * (slots - i)
             percent = Fore.YELLOW + f"{int((i / slots) * 100)}%"
-            
             sys.stdout.write(f"\r  [*] Loading {comp:<24} [{bar}] {percent}")
             sys.stdout.flush()
-            time.sleep(0.052) # Tepat 52 ms per slot biar total durasi sinkron 3.5 detik
+            time.sleep(0.052)
             
         print(Fore.WHITE + " ... " + Fore.GREEN + Style.BRIGHT + "OK")
         time.sleep(0.05)
@@ -497,7 +569,7 @@ if __name__ == "__main__":
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
         
-        text_to_render = "Wifi Analysis"
+        text_to_render = "Wifi Analyzer"
         if figlet_format:
             try:
                 art = figlet_format(text_to_render, font="slant")
@@ -508,9 +580,9 @@ if __name__ == "__main__":
 
         # Banner Utama
         print(Fore.RED + Style.BRIGHT + art)
-        print(Fore.CYAN + Style.BRIGHT + "Tools By SatyaGanzz".center(65, " "))
+        print(Fore.CYAN + Style.BRIGHT + "Tools by SatyaGanzz".center(65, " "))
         
-        # Tampilan Menu Berjumlah 6 Opsi
+        # Tampilan Menu Berjumlah 7 Opsi Terstruktur Rapi
         padding = "    "
         print(Fore.YELLOW + Style.BRIGHT + "========================== TOOLS MENU ==========================")
         print(padding + Fore.WHITE + Style.BRIGHT + "[1] Wifi Analysis (SSID, IP, Geo, Ports, Speedtest, Pass)")
@@ -518,10 +590,11 @@ if __name__ == "__main__":
         print(padding + Fore.WHITE + Style.BRIGHT + "[3] DNS Domain Resolver (Domain -> IP)")
         print(padding + Fore.WHITE + Style.BRIGHT + "[4] Discover Active Devices on Wi-Fi (Subnet Scanner)")
         print(padding + Fore.WHITE + Style.BRIGHT + "[5] Connection Stability & Jitter Test (10x Packets)")
-        print(padding + Fore.RED + Style.BRIGHT + "[6] Exit Tools")
+        print(padding + Fore.GREEN + Style.BRIGHT + "[6] Bandwidth Real-Time Monitor (BARU/LIVE)")
+        print(padding + Fore.RED + Style.BRIGHT + "[7] Exit Tools")
         print(Fore.YELLOW + Style.BRIGHT + "================================================================")
         
-        print(Fore.WHITE + Style.BRIGHT + "\n    Choose an option (1-6): ", end="")
+        print(Fore.WHITE + Style.BRIGHT + "\n    Choose an option (1-7): ", end="")
         menu_choice = input().strip()
         
         if menu_choice == '1':
@@ -540,8 +613,10 @@ if __name__ == "__main__":
             run_jitter_test()
             check_bottom_navigation()
         elif menu_choice == '6':
+            run_bandwidth_monitor()
+        elif menu_choice == '7':
             print(Fore.GREEN + "\n    [+] Thank you for using SatyaGanzz tools. Goodbye!")
             break
         else:
-            print(Fore.RED + "    [-] Invalid choice, please enter 1, 2, 3, 4, 5, or 6.")
+            print(Fore.RED + "    [-] Invalid choice, please enter 1, 2, 3, 4, 5, 6, or 7.")
             time.sleep(1.5)

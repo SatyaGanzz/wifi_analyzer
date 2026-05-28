@@ -1,5 +1,5 @@
 ==================================================
- NETWORK ANALYSIS REPORT | 2026-05-26 13:34:40
+ NETWORK ANALYSIS REPORT | 2026-05-26 13:51:48
 ==================================================
  [WI-FI DETAILS]
   SSID             : Kelas B6
@@ -19,9 +19,90 @@
   Location         : Bandung, West Java, ID
 
  [SPEEDTEST RESULTS]
-  Download Speed   : 30.42 Mbps
-  Upload Speed     : 31.73 Mbps
-  Ping Latency     : 17.230 ms
+  Download Speed   : 34.75 Mbps
+  Upload Speed     : 40.47 Mbps
+  Ping Latency     : 11.215 ms
+==================================================
+
+
+==================================================
+ NETWORK ANALYSIS REPORT | 2026-05-26 14:59:12
+==================================================
+ [WI-FI DETAILS]
+  SSID             : Kelas B6
+  Security         : WPA-Personal
+  Signal Strength  : 100% (-50 dBm)
+  Password         : TNKelasB6
+
+ [LOCAL NETWORK]
+  Local IP Address : 172.20.218.96
+  Subnet Mask      : 255.255.0.0
+  Default Gateway  : 172.20.1.1
+  MAC Address      : A8-2B-DD-BA-79-F7
+
+ [PUBLIC INTEL]
+  Public IP        : 180.253.254.156
+  ISP Provider     : AS7713 PT Telekomunikasi Indonesia
+  Location         : Bandung, West Java, ID
+
+ [SPEEDTEST RESULTS]
+  Download Speed   : 30.51 Mbps
+  Upload Speed     : 40.85 Mbps
+  Ping Latency     : 19.762 ms
+==================================================
+
+
+==================================================
+ NETWORK ANALYSIS REPORT | 2026-05-26 15:33:05
+==================================================
+ [WI-FI DETAILS]
+  SSID             : Kelas B6
+  Security         : WPA-Personal
+  Signal Strength  : 94% (-53 dBm)
+  Password         : TNKelasB6
+
+ [LOCAL NETWORK]
+  Local IP Address : 172.20.218.96
+  Subnet Mask      : 255.255.0.0
+  Default Gateway  : 25.255.255.254
+  MAC Address      : A8-2B-DD-BA-79-F7
+
+ [PUBLIC INTEL]
+  Public IP        : 180.253.254.156
+  ISP Provider     : AS7713 PT Telekomunikasi Indonesia
+  Location         : Bandung, West Java, ID
+
+ [SPEEDTEST RESULTS]
+  Download Speed   : 19.66 Mbps
+  Upload Speed     : 20.78 Mbps
+  Ping Latency     : 50.170 ms
+==================================================
+
+
+==================================================
+ NETWORK ANALYSIS REPORT | 2026-05-28 07:56:09
+==================================================
+ [WI-FI DETAILS]
+  SSID             : Kelas B6
+  Security         : WPA-Personal
+  Signal Strength  : 95% (-52 dBm)
+  Password         : TNKelasB6
+
+ [LOCAL NETWORK]
+  Local IP Address : 172.20.218.96
+  Subnet Mask      : 255.255.0.0
+  Default Gateway  : 172.20.1.1
+  MAC Address      : A8-2B-DD-BA-79-F7
+
+ [PUBLIC INTEL]
+  Public IP        : 180.253.254.156
+  ISP Provider     : AS7713 PT Telekomunikasi Indonesia
+  Location         : Bandung, West Java, ID
+
+ [SPEEDTEST RESULTS]
+  Download Speed   : 10.30 Mbps
+  Upload Speed     : 29.30 Mbps
+  Ping Latency     : 51.803 ms
 ==================================================
 
 
