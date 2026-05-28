@@ -11,7 +11,7 @@
 
 ---
 
-<img src="images/demo3.png" align="center" alt="Banner">
+<img src="img/banner.png" align="center" alt="Banner">
 
 ---
 ## 📖 Description
